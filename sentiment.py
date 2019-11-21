@@ -21,6 +21,7 @@ def _parse_args():
     parser.add_argument('--blind_test_path', type=str, default='data/test-blind.txt', help='path to blind test set (you should not need to modify)')
     parser.add_argument('--test_output_path', type=str, default='test-blind.output.txt', help='output path for test predictions')
     parser.add_argument('--no_run_on_test', dest='run_on_test', default=True, action='store_false', help='skip printing output on the test set')
+    parser.add_argument('--eval', type=bool, default=False, help='evaluate mode')
     args = parser.parse_args()
     return args
 
@@ -35,11 +36,15 @@ if __name__ == '__main__':
     dev_exs = read_and_index_sentiment_examples(args.dev_path, word_vectors.word_indexer)
     test_exs = read_and_index_sentiment_examples(args.blind_test_path, word_vectors.word_indexer)
     print(repr(len(train_exs)) + " / " + repr(len(dev_exs)) + " / " + repr(len(test_exs)) + " train/dev/test examples")
-
+    model_path = '/scratch/cluster/msakthi/Desktop/maddy/cs388/NLP-finalproject/NLP-Neural-Networks-for-Sentiment-Analysis/saved_model.pth' 
     if args.model == "FF":
         test_exs_predicted = train_evaluate_ffnn(train_exs, dev_exs, test_exs, word_vectors)
     elif args.model == "FANCY":
-        test_exs_predicted = train_evaluate_fancy(train_exs, dev_exs, test_exs, word_vectors)
+        if args.eval == True:
+            print("evaluating trained model")
+            test_exs_predicted = evaluate_fancy(dev_exs, test_exs, word_vectors, model_path)
+        else:
+            test_exs_predicted = train_evaluate_fancy(train_exs, dev_exs, test_exs, word_vectors)
     else:
         raise Exception("Pass in either FF or FANCY to run the appropriate system")
     # Write the test set output

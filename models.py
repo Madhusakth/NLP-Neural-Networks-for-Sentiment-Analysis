@@ -137,7 +137,7 @@ def train_evaluate_fancy(train_exs: List[SentimentExample], dev_exs: List[Sentim
     # Instantiate the model w/ hyperparams
     output_size = 1
     embedding_dim = 300
-    hidden_dim = 256
+    hidden_dim = 512
     n_layers = 2
     net = SentimentLSTM(output_size, embedding_dim, hidden_dim, n_layers,word_vectors)
     print(net)
@@ -200,7 +200,8 @@ def train_evaluate_fancy(train_exs: List[SentimentExample], dev_exs: List[Sentim
                 print("train accuracy:",train_acc)
                 num_correct = 0
 
-
+    #save model
+    torch.save(net.state_dict(),'/scratch/cluster/msakthi/Desktop/maddy/cs388/NLP-finalproject/NLP-Neural-Networks-for-Sentiment-Analysis/saved_model.pth')
     dev_losses = []
     num_correct = 0
 
@@ -234,6 +235,77 @@ def train_evaluate_fancy(train_exs: List[SentimentExample], dev_exs: List[Sentim
         pred_test.append(SentimentExample(inputs[:test_seq_lens[i]], int(pred.detach().numpy())))
         i +=1
     return pred_test
+
+
+def evaluate_fancy( dev_exs: List[SentimentExample], test_exs: List[SentimentExample], word_vectors: WordEmbeddings, model_path) -> List[SentimentExample]:
+    # 59 is the max sentence length in the corpus, so let's set this to 60
+    seq_max_len = 60
+    test_mat = np.asarray([pad_to_length(np.array(ex.indexed_words), seq_max_len) for ex in test_exs])
+    # Also store the sequence lengths -- this could be useful for training LSTMs
+    test_seq_lens = np.array([len(ex.indexed_words) for ex in test_exs])
+    # Labels
+    test_labels_arr = np.array([ex.label for ex in test_exs])
+    #print(test_labels_arr)
+
+
+
+    from torch.utils.data import TensorDataset, DataLoader
+    test_data = TensorDataset(torch.from_numpy(test_mat), torch.from_numpy(test_labels_arr))
+    # dataloaders
+    batch_size = 1#100 #10
+    # Instantiate the model w/ hyperparams
+    output_size = 1
+    embedding_dim = 300
+    hidden_dim = 256
+    n_layers = 2
+    net = SentimentLSTM(output_size, embedding_dim, hidden_dim, n_layers,word_vectors)
+    print(net)
+
+    net.load_state_dict(torch.load(model_path))
+
+
+    num_correct = 0
+
+
+    net.eval()
+    # get numpy array with sequence length for dev and test
+    dev_mat = np.asarray([pad_to_length(np.array(ex.indexed_words), seq_max_len) for ex in dev_exs])
+    # Also store the sequence lengths -- this could be useful for training LSTMs
+    dev_seq_lens = np.array([len(ex.indexed_words) for ex in dev_exs])
+    # Labels
+    dev_labels_arr = np.array([ex.label for ex in dev_exs])
+    dev_data = TensorDataset(torch.from_numpy(dev_mat), torch.from_numpy(dev_labels_arr))
+    dev_loader = DataLoader(dev_data, shuffle=True, batch_size=100)
+
+
+    for inputs, labels in dev_loader:
+        output, val_h = net(inputs)
+        pred = torch.round(output.squeeze())
+        correct_tensor = pred.eq(labels.float().view_as(pred))
+        correct = np.squeeze(correct_tensor.numpy())
+        num_correct += np.sum(correct)
+
+    print("num_correct", num_correct)
+    print("len(dev_loader.dataset):",len(dev_loader.dataset))
+
+    dev_acc = num_correct/len(dev_loader.dataset)
+    print("dev final accuracy: {:.3f}".format(dev_acc))
+
+
+
+    test_loader = DataLoader(test_data, shuffle=False, batch_size=1)
+    pred_test = []
+    i = 0
+    for inputs, lables in test_loader:
+        output, h = net(inputs)
+        pred = torch.round(output.squeeze())
+        inputs = inputs.numpy()
+        #print(inputs.tolist())
+        inputs = list(itertools.chain(*inputs))
+        pred_test.append(SentimentExample(inputs[:test_seq_lens[i]], int(pred.detach().numpy())))
+        i +=1
+    return pred_test
+
 
 class SentimentFNN(nn.Module):
 
