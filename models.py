@@ -256,7 +256,7 @@ def evaluate_fancy( dev_exs: List[SentimentExample], test_exs: List[SentimentExa
     # Instantiate the model w/ hyperparams
     output_size = 1
     embedding_dim = 300
-    hidden_dim = 256
+    hidden_dim = 512
     n_layers = 2
     net = SentimentLSTM(output_size, embedding_dim, hidden_dim, n_layers,word_vectors)
     print(net)
