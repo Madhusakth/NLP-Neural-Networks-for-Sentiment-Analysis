@@ -1,0 +1,1 @@
+saved_model.pth - trained on rotten tomatoes, 512HU, 300-d embedding, LSTM -> FC -> FC -> sigmoid
