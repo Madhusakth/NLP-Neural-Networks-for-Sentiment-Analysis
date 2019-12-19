@@ -137,7 +137,7 @@ def train_evaluate_fancy(train_exs: List[SentimentExample], dev_exs: List[Sentim
     # Instantiate the model w/ hyperparams
     output_size = 1
     embedding_dim = 300
-    hidden_dim = 512
+    hidden_dim = 256
     n_layers = 2
     net = SentimentLSTM(output_size, embedding_dim, hidden_dim, n_layers,word_vectors)
     print(net)
@@ -152,7 +152,7 @@ def train_evaluate_fancy(train_exs: List[SentimentExample], dev_exs: List[Sentim
     epochs = 5 #20 
 
     counter = 0
-    print_every = 500
+    print_every = 100
     
     num_correct = 0
 
